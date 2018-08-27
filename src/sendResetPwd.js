@@ -49,7 +49,7 @@ module.exports = function sendResetPwd (options, identifyUser, notifierOptions) 
         resetToken: user.resetToken,
         resetShortToken: user.resetShortToken
       }
-      Promise.all([
+      return Promise.all([
           user,
           hashPassword(options.app, user.resetToken),
           hashPassword(options.app, user.resetShortToken)
