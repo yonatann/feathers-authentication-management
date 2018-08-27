@@ -23,7 +23,8 @@ module.exports = function sendResetPwd (options, identifyUser, notifierOptions) 
   } = options;
 
   const checkProps = skipIsVerifiedCheck ? [] : ['isVerified'];
-
+  let responseParams = {};
+  
   return Promise.resolve()
     .then(() => {
       ensureObjPropsValid(identifyUser, options.identifyUserProps);
@@ -43,11 +44,17 @@ module.exports = function sendResetPwd (options, identifyUser, notifierOptions) 
       })
     )
     .then(user => notifier(options.notifier, 'sendResetPwd', user, notifierOptions).then(() => user))
-    .then(user => Promise.all([
-      user,
-      hashPassword(options.app, user.resetToken),
-      hashPassword(options.app, user.resetShortToken)
-    ])
+    .then((user) => {
+      responseParams = {
+        resetToken: user.resetToken,
+        resetShortToken: user.resetShortToken
+      }
+      Promise.all([
+          user,
+          hashPassword(options.app, user.resetToken),
+          hashPassword(options.app, user.resetShortToken)
+        ]
+      )}
     )
     .then(([ user, longToken, shortToken ]) =>
       patchUser(user, {
@@ -56,7 +63,7 @@ module.exports = function sendResetPwd (options, identifyUser, notifierOptions) 
         resetShortToken: shortToken
       })
     )
-    .then(user => sanitizeUserForClient(user));
+    .then(user => Object.assign(sanitizeUserForClient(user), responseParams));
 
   function patchUser (user, patchToUser) {
     return users.patch(user[usersIdName], patchToUser, {}) // needs users from closure
